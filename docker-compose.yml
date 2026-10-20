@@ -16,7 +16,7 @@ services:
     ports:
       - "${LISTEN_ADDR:-0.0.0.0}:${ARENDA_PORT:-8080}:8080"
     environment:
-      TZ: ${TZ:-Europe/Moscow}
+      TZ: ${TZ:-Europe/Kaliningrad}
     volumes:
       - arenda-data:/data
 
@@ -26,7 +26,7 @@ services:
     ports:
       - "${LISTEN_ADDR:-0.0.0.0}:${BAKERY_PORT:-8081}:8080"
     environment:
-      TZ: ${TZ:-Europe/Moscow}
+      TZ: ${TZ:-Europe/Kaliningrad}
     volumes:
       - bakery-data:/data
 
@@ -36,7 +36,7 @@ services:
     ports:
       - "${LISTEN_ADDR:-0.0.0.0}:${PRICE_TAGS_PORT:-8082}:8082"
     environment:
-      TZ: ${TZ:-Europe/Moscow}
+      TZ: ${TZ:-Europe/Kaliningrad}
     volumes:
       - price-tags-data:/data
 
@@ -46,7 +46,7 @@ services:
     ports:
       - "${LISTEN_ADDR:-0.0.0.0}:${TSG_BILLING_PORT:-8083}:8080"
     environment:
-      TZ: ${TZ:-Europe/Moscow}
+      TZ: ${TZ:-Europe/Kaliningrad}
     volumes:
       - tsg-billing-data:/data
       - ./config/tsg-billing/cfg.json:/etc/tsg-billing/cfg.json:ro
