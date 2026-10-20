@@ -1,6 +1,6 @@
 # apps-stack
 
-Запуск на одной машине через Docker Compose четырёх веб-приложений:
+Запуск на одной машине через Docker Compose пяти веб-приложений:
 
 | Сервис | Назначение | Порт | Образ |
 |---|---|---|---|
@@ -8,9 +8,10 @@
 | [bakery](https://github.com/khromenokroman/bakery) | учёт продукции пекарни | 8081 | `ghcr.io/khromenokroman/bakery` |
 | [price-tags](https://github.com/khromenokroman/price-tags) | справочники товаров и печать ценников | 8082 | `ghcr.io/khromenokroman/price-tags` |
 | [tsg-billing](https://github.com/khromenokroman/tsg-billing) | участники ТСЖ и квитанции | 8083 | `ghcr.io/khromenokroman/tsg-billing` |
+| [utm-dashboard](https://github.com/khromenokroman/UTMDashboard) | сроки сертификатов и адреса УТМ ЕГАИС | 8084 | `ghcr.io/khromenokroman/utm-dashboard` |
 
 Образы собираются в CI каждого проекта и публикуются по тегу версии. Все работают от непривилегированного
-пользователя (uid 10001), данные каждого сервиса в своём томе.
+пользователя (uid 10001), данные каждого сервиса в своём томе. У utm-dashboard своих данных нет.
 
 ## Установка
 
@@ -23,6 +24,8 @@ cd apps-stack
 cp .env.example .env
 cp config/tsg-billing/cfg.json.example config/tsg-billing/cfg.json
 chmod 644 config/tsg-billing/cfg.json
+cp config/utm-dashboard/utms.json.example config/utm-dashboard/utms.json
+chmod 644 config/utm-dashboard/utms.json
 sudo docker-compose up -d
 ```
 
@@ -30,8 +33,14 @@ sudo docker-compose up -d
 (описание полей в [README tsg-billing](https://github.com/khromenokroman/tsg-billing#параметры-cfgjson)),
 `path_db` не менять. Без файла Docker создаст на его месте каталог и tsg-billing не запустится.
 
-Интерфейсы: `http://адрес:8080/` (arenda), `:8081` (bakery), `:8082` (price-tags), `:8083` (tsg-billing).
-В arenda и bakery при первом входе создаётся администратор. В price-tags и tsg-billing авторизации нет,
+В `config/utm-dashboard/utms.json` вписать имена и адреса УТМ (формат как в
+[configuration/utms.json](https://github.com/khromenokroman/UTMDashboard/blob/master/configuration/utms.json)).
+УТМ опрашиваются из контейнера по адресу `ip:8080`, они должны быть доступны с этой машины. Без файла
+utm-dashboard тоже не запустится.
+
+Интерфейсы: `http://адрес:8080/` (arenda), `:8081` (bakery), `:8082` (price-tags), `:8083` (tsg-billing),
+`:8084` (utm-dashboard).
+В arenda и bakery при первом входе создаётся администратор. В price-tags, tsg-billing и utm-dashboard авторизации нет,
 а пароли arenda и bakery идут по сети без шифрования, поэтому порты открывать только в доверенной сети
 или ставить HTTPS-прокси.
 
@@ -44,12 +53,12 @@ sudo docker-compose up -d
 | Переменная | По умолчанию | Назначение |
 |---|---|---|
 | `LISTEN_ADDR` | `0.0.0.0` | адрес хоста для всех портов; `127.0.0.1` - только с этой машины, например за прокси |
-| `ARENDA_PORT`, `BAKERY_PORT`, `PRICE_TAGS_PORT`, `TSG_BILLING_PORT` | `8080`-`8083` | порты на хосте |
-| `TZ` | `Europe/Kaliningrad` | часовой пояс: даты документов и копии по расписанию в arenda и bakery |
-| `ARENDA_TAG`, `BAKERY_TAG`, `PRICE_TAGS_TAG`, `TSG_BILLING_TAG` | `latest` | версии образов |
+| `ARENDA_PORT`, `BAKERY_PORT`, `PRICE_TAGS_PORT`, `TSG_BILLING_PORT`, `UTM_DASHBOARD_PORT` | `8080`-`8084` | порты на хосте |
+| `TZ` | `Europe/Kaliningrad` | часовой пояс: даты документов и копии по расписанию в arenda и bakery, сроки сертификатов в utm-dashboard |
+| `ARENDA_TAG`, `BAKERY_TAG`, `PRICE_TAGS_TAG`, `TSG_BILLING_TAG`, `UTM_DASHBOARD_TAG` | `latest` | версии образов |
 
 После правки: `sudo docker-compose up -d` (пересоздаются только изменённые сервисы). Для настроек
-tsg-billing: `sudo docker-compose restart tsg-billing`.
+tsg-billing и списка УТМ: `sudo docker-compose restart tsg-billing` или `utm-dashboard`.
 
 Журналы: `sudo docker-compose logs -f [сервис]`, на каждый контейнер хранится до 3 файлов по 10 МБ.
 
@@ -73,7 +82,8 @@ sudo scripts/backup.sh /mnt/usb/apps      # в другой каталог
 ```
 
 Сервисы останавливаются на несколько секунд, данные каждого тома упаковываются в отдельный архив
-(`arenda.tgz`, `bakery.tgz`, `price-tags.tgz`, `tsg-billing.tgz`), рядом копируются `config/` и `.env`.
+(`arenda.tgz`, `bakery.tgz`, `price-tags.tgz`, `tsg-billing.tgz`), рядом копируются `config/` (там и список
+УТМ) и `.env`.
 Каталог `backups/` на том же диске не спасёт при отказе диска: копировать на другой носитель. Копии по
 расписанию внутри arenda и bakery продолжают делаться в их томах.
 
@@ -94,7 +104,7 @@ sudo scripts/restore.sh backups/20261020-030000 bakery        # только bak
 
 ## Проверка
 
-`sudo tests/stack_run.sh` поднимает стек отдельным проектом `apps-stack-test` на портах 18180-18183,
+`sudo tests/stack_run.sh` поднимает стек отдельным проектом `apps-stack-test` на портах 18180-18184,
 проверяет ответы всех сервисов, сохранность данных при пересоздании, резервную копию и восстановление,
 затем удаляет его вместе с томами. CI запускает проверку на каждый push и раз в неделю на свежих `latest`.
 

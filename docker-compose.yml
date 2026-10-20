@@ -1,5 +1,5 @@
-# Все сервисы на одной машине: cp .env.example .env, настройки tsg-billing (см. README), docker compose up -d.
-# Порты, адрес, версии образов и часовой пояс задаются в .env; данные каждого сервиса в своём томе.
+# Все сервисы на одной машине: cp .env.example .env, настройки tsg-billing и список УТМ (см. README), docker compose up -d.
+# Порты, адрес, версии образов и часовой пояс задаются в .env; данные каждого сервиса в своём томе (у utm-dashboard данных нет).
 
 x-common: &common
   restart: unless-stopped
@@ -50,6 +50,16 @@ services:
     volumes:
       - tsg-billing-data:/data
       - ./config/tsg-billing/cfg.json:/etc/tsg-billing/cfg.json:ro
+
+  utm-dashboard:
+    <<: *common
+    image: ghcr.io/khromenokroman/utm-dashboard:${UTM_DASHBOARD_TAG:-latest}
+    ports:
+      - "${LISTEN_ADDR:-0.0.0.0}:${UTM_DASHBOARD_PORT:-8084}:8080"
+    environment:
+      TZ: ${TZ:-Europe/Kaliningrad}
+    volumes:
+      - ./config/utm-dashboard/utms.json:/etc/utm-dashboard/utms.json:ro
 
 volumes:
   arenda-data:

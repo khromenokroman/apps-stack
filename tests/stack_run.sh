@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # плагин docker compose (v2) или docker-compose 1.29 из Debian 12; DC можно задать снаружи
 DC=${DC:-$(docker compose version >/dev/null 2>&1 && echo "docker compose" || echo docker-compose)}
 export COMPOSE_PROJECT_NAME=apps-stack-test LISTEN_ADDR=127.0.0.1
-export ARENDA_PORT=18180 BAKERY_PORT=18181 PRICE_TAGS_PORT=18182 TSG_BILLING_PORT=18183
+export ARENDA_PORT=18180 BAKERY_PORT=18181 PRICE_TAGS_PORT=18182 TSG_BILLING_PORT=18183 UTM_DASHBOARD_PORT=18184
 fail=0
 ok() { echo "ok    $*"; }
 bad() { echo "FAIL  $*"; fail=1; }
@@ -17,11 +17,18 @@ if [ ! -f config/tsg-billing/cfg.json ]; then
     cp config/tsg-billing/cfg.json.example config/tsg-billing/cfg.json
     created_cfg=1
 fi
+# список УТМ: УТМ на 127.0.0.1 внутри контейнера сразу отвечает ошибкой, панель показывает его строкой
+created_utms=0
+if [ ! -f config/utm-dashboard/utms.json ]; then
+    printf '[{"name": "УТМ Проверка", "ip": "127.0.0.1"}]\n' > config/utm-dashboard/utms.json
+    created_utms=1
+fi
 BACKUPS=$(mktemp -d)
 cleanup() {
     $DC down -v >/dev/null 2>&1
     rm -rf "$BACKUPS"
     [ "$created_cfg" = 0 ] || rm -f config/tsg-billing/cfg.json
+    [ "$created_utms" = 0 ] || rm -f config/utm-dashboard/utms.json
 }
 trap cleanup EXIT
 wait_http() { for _ in $(seq 100); do curl -sf "$1" >/dev/null && return 0; sleep 0.2; done; return 1; }
@@ -30,13 +37,14 @@ check_all() {
     wait_http "http://127.0.0.1:$BAKERY_PORT/api/version" && ok "$1: bakery $(curl -s "http://127.0.0.1:$BAKERY_PORT/api/version")" || bad "$1: bakery"
     wait_http "http://127.0.0.1:$PRICE_TAGS_PORT/api/products" && ok "$1: price-tags" || bad "$1: price-tags"
     wait_http "http://127.0.0.1:$TSG_BILLING_PORT/" && ok "$1: tsg-billing" || bad "$1: tsg-billing"
+    wait_http "http://127.0.0.1:$UTM_DASHBOARD_PORT/" && ok "$1: utm-dashboard" || bad "$1: utm-dashboard"
 }
 has_product() { curl -s "http://127.0.0.1:$PRICE_TAGS_PORT/api/products" | grep -q 'Хлеб белый'; }
 
 $DC config -q && ok "docker-compose.yml разбирается" || { bad "docker-compose.yml"; exit 1; }
 $DC pull -q && $DC up -d >/dev/null 2>&1 || { bad "не поднялся"; $DC logs | tail -20; exit 1; }
 check_all "запуск"
-for s in arenda bakery; do
+for s in arenda bakery utm-dashboard; do
     [ "$($DC exec -T "$s" date +%Z)" = EET ] && ok "$s: часовой пояс по умолчанию Europe/Kaliningrad" || bad "часовой пояс $s: $($DC exec -T "$s" date)"
 done
 
