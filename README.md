@@ -45,7 +45,7 @@ sudo docker-compose up -d
 |---|---|---|
 | `LISTEN_ADDR` | `0.0.0.0` | адрес хоста для всех портов; `127.0.0.1` - только с этой машины, например за прокси |
 | `ARENDA_PORT`, `BAKERY_PORT`, `PRICE_TAGS_PORT`, `TSG_BILLING_PORT` | `8080`-`8083` | порты на хосте |
-| `TZ` | `Europe/Moscow` | часовой пояс: даты документов и копии по расписанию в arenda и bakery |
+| `TZ` | `Europe/Kaliningrad` | часовой пояс: даты документов и копии по расписанию в arenda и bakery |
 | `ARENDA_TAG`, `BAKERY_TAG`, `PRICE_TAGS_TAG`, `TSG_BILLING_TAG` | `latest` | версии образов |
 
 После правки: `sudo docker-compose up -d` (пересоздаются только изменённые сервисы). Для настроек

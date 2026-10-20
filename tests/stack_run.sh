@@ -36,7 +36,9 @@ has_product() { curl -s "http://127.0.0.1:$PRICE_TAGS_PORT/api/products" | grep 
 $DC config -q && ok "docker-compose.yml разбирается" || { bad "docker-compose.yml"; exit 1; }
 $DC pull -q && $DC up -d >/dev/null 2>&1 || { bad "не поднялся"; $DC logs | tail -20; exit 1; }
 check_all "запуск"
-[ "$($DC exec -T arenda date +%Z)" = MSK ] && ok "TZ из .env по умолчанию" || bad "часовой пояс arenda"
+for s in arenda bakery; do
+    [ "$($DC exec -T "$s" date +%Z)" = EET ] && ok "$s: часовой пояс по умолчанию Europe/Kaliningrad" || bad "часовой пояс $s: $($DC exec -T "$s" date)"
+done
 
 curl -sf -X POST "http://127.0.0.1:$PRICE_TAGS_PORT/api/products" -d '{"name":"Хлеб белый","unit":"шт","price_kop":4590}' >/dev/null
 $DC down >/dev/null 2>&1 && $DC up -d >/dev/null 2>&1
