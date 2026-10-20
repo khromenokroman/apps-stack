@@ -34,7 +34,7 @@ services:
     <<: *common
     image: ghcr.io/khromenokroman/price-tags:${PRICE_TAGS_TAG:-latest}
     ports:
-      - "${LISTEN_ADDR:-0.0.0.0}:${PRICE_TAGS_PORT:-8082}:8082"
+      - "${LISTEN_ADDR:-0.0.0.0}:${PRICE_TAGS_PORT:-8082}:8080"
     environment:
       TZ: ${TZ:-Europe/Kaliningrad}
     volumes:
