@@ -1,5 +1,6 @@
 .env
 config/tsg-billing/cfg.json
+config/utm-dashboard/utms.json
 backups/
 .idea
 CLAUDE.md
