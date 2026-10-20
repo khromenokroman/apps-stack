@@ -1,0 +1,12 @@
+{
+  "port": 8080,
+  "log_level": 5,
+  "path_db": "/data/tsg-billing.json",
+  "receiver_name": "",
+  "qr_payee_inn": "",
+  "qr_payee_kpp": "",
+  "qr_bank_name": "",
+  "qr_bic": "",
+  "qr_personal_acc": "",
+  "qr_corresp_acc": ""
+}

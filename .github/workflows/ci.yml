@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    # раз в неделю: свежие образы latest всех сервисов по-прежнему поднимаются вместе
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+jobs:
+  stack:
+    name: stack-${{ matrix.compose }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compose: [ v2, "1.29" ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Scripts syntax
+        run: bash -n scripts/*.sh tests/*.sh
+
+      - name: docker-compose 1.29 as in Debian 12
+        if: matrix.compose == '1.29'
+        run: |
+          sudo tee /usr/local/bin/docker-compose-1.29 >/dev/null <<'SH'
+          #!/bin/sh
+          exec docker run --rm -i -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD":"$PWD" -w "$PWD" \
+              -e COMPOSE_PROJECT_NAME -e LISTEN_ADDR -e ARENDA_PORT -e BAKERY_PORT -e PRICE_TAGS_PORT -e TSG_BILLING_PORT \
+              docker/compose:1.29.2 "$@"
+          SH
+          sudo chmod +x /usr/local/bin/docker-compose-1.29
+          echo "DC=docker-compose-1.29" >> "$GITHUB_ENV"
+
+      - name: Up, recreate, backup, restore
+        run: sudo --preserve-env=DC tests/stack_run.sh

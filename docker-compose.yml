@@ -1,0 +1,58 @@
+# Все сервисы на одной машине: cp .env.example .env, настройки tsg-billing (см. README), docker compose up -d.
+# Порты, адрес, версии образов и часовой пояс задаются в .env; данные каждого сервиса в своём томе.
+
+x-common: &common
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  arenda:
+    <<: *common
+    image: ghcr.io/khromenokroman/arenda:${ARENDA_TAG:-latest}
+    ports:
+      - "${LISTEN_ADDR:-0.0.0.0}:${ARENDA_PORT:-8080}:8080"
+    environment:
+      TZ: ${TZ:-Europe/Moscow}
+    volumes:
+      - arenda-data:/data
+
+  bakery:
+    <<: *common
+    image: ghcr.io/khromenokroman/bakery:${BAKERY_TAG:-latest}
+    ports:
+      - "${LISTEN_ADDR:-0.0.0.0}:${BAKERY_PORT:-8081}:8080"
+    environment:
+      TZ: ${TZ:-Europe/Moscow}
+    volumes:
+      - bakery-data:/data
+
+  price-tags:
+    <<: *common
+    image: ghcr.io/khromenokroman/price-tags:${PRICE_TAGS_TAG:-latest}
+    ports:
+      - "${LISTEN_ADDR:-0.0.0.0}:${PRICE_TAGS_PORT:-8082}:8082"
+    environment:
+      TZ: ${TZ:-Europe/Moscow}
+    volumes:
+      - price-tags-data:/data
+
+  tsg-billing:
+    <<: *common
+    image: ghcr.io/khromenokroman/tsg-billing:${TSG_BILLING_TAG:-latest}
+    ports:
+      - "${LISTEN_ADDR:-0.0.0.0}:${TSG_BILLING_PORT:-8083}:8080"
+    environment:
+      TZ: ${TZ:-Europe/Moscow}
+    volumes:
+      - tsg-billing-data:/data
+      - ./config/tsg-billing/cfg.json:/etc/tsg-billing/cfg.json:ro
+
+volumes:
+  arenda-data:
+  bakery-data:
+  price-tags-data:
+  tsg-billing-data:
