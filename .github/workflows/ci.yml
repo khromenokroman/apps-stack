@@ -32,7 +32,7 @@ jobs:
           sudo tee /usr/local/bin/docker-compose-1.29 >/dev/null <<'SH'
           #!/bin/sh
           exec docker run --rm -i -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD":"$PWD" -w "$PWD" \
-              -e COMPOSE_PROJECT_NAME -e LISTEN_ADDR -e ARENDA_PORT -e BAKERY_PORT -e PRICE_TAGS_PORT -e TSG_BILLING_PORT \
+              -e COMPOSE_PROJECT_NAME -e LISTEN_ADDR -e ARENDA_PORT -e BAKERY_PORT -e PRICE_TAGS_PORT -e TSG_BILLING_PORT -e UTM_DASHBOARD_PORT \
               docker/compose:1.29.2 "$@"
           SH
           sudo chmod +x /usr/local/bin/docker-compose-1.29
